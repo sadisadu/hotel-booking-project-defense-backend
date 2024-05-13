@@ -18,7 +18,7 @@ app.use('/api/rooms', roomsRoute)
 app.use('/api/users', usersRoute)
 app.use('/api/bookings', bookingRoute)
 
-// /api/bookings/bookroom
+
 
 //* connecting database
 connectDB()
