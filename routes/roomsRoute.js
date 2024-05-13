@@ -16,7 +16,7 @@ router.get("/getallrooms", async (req, res) => {
     }
 });
 
-
+// get room by id
 router.post("/getroombyid", async (req, res) => {
     const roomid = req.body.roomid;
     try {
@@ -27,6 +27,20 @@ router.post("/getroombyid", async (req, res) => {
         res
             .status(500)
             .send("An error occurred during roombuid. Please try again later.");
+    }
+});
+
+
+// add room
+router.post("/addRoom", async (req, res) => {
+    const roomid = req.body.roomid;
+    try {
+        const newRoom = new Room(req.body)
+        await newRoom.save()
+        res.send("New Room Added Succesfully");
+    } catch (error) {
+        console.error("Error occurred during add room:", error);
+        res.status(500).send("An error occurred during add room. Please try again later.");
     }
 });
 
