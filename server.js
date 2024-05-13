@@ -10,13 +10,15 @@ app.use(cors({
 }))
 
 app.use(express.json());
-const roomsRoute = require('./routes/roomsRoute')
-const usersRoute = require('./routes/usersRoute')
-const bookingRoute =require('./routes/bookingRoute')
+const roomsRoute = require('./routes/roomsRoute.js')
+const usersRoute = require('./routes/usersRoute.js')
+const bookingRoute = require('./routes/bookingRoute.js')
 
 app.use('/api/rooms', roomsRoute)
-app.use('/api/users',usersRoute)
-app.use('/api/booking' , bookingRoute)
+app.use('/api/users', usersRoute)
+app.use('/api/bookings', bookingRoute)
+
+// /api/bookings/bookroom
 
 //* connecting database
 connectDB()
