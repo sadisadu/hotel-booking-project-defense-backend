@@ -44,5 +44,22 @@ router.post("/addRoom", async (req, res) => {
     }
 });
 
+// delete room by admin 
+router.delete("/delete/:id", async (req, res) => {
+    if (req.params.id) {
+        try {
+            await Room.findByIdAndDelete(req.params.id)
+            res.status(200).json("Room has been delete successfully !!")
+        } catch (err) {
+            console.error("Error occurred during add room:", err);
+            res.status(500).send("An error occurred during deleting room. Please try again !!");
+        }
+    }
+    else {
+        console.error("Error occurred during add room:", err);
+        res.status(500).send("Not getting the room Id. Please try again !!");
+    }
+})
+
 module.exports = router;
 
