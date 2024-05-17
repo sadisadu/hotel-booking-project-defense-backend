@@ -53,4 +53,46 @@ router.get("/getallusers", async (req, res) => {
     }
 });
 
+// delete user by admin
+router.delete("/delete/:id", async (req, res) => {
+    if (req.params.id) {
+        try {
+            await User.findByIdAndDelete(req.params.id)
+            res.status(200).json("User has been delete successfully !!")
+        } catch (err) {
+            console.error("Error occurred during user:", err);
+            res.status(500).send("An error occurred during deleting user. Please try again !!");
+        }
+    }
+    else {
+        console.error("Error occurred during delete user:", err);
+        res.status(500).send("Not getting the user id. Please try again !!");
+    }
+})
+
+
+//edit the room details 
+router.put("/update", async (req, res) => {
+    if (req.body.userId) {
+        try {
+
+            const updatedUser = await User.findByIdAndUpdate(req.body.userId,
+                {
+                    $set: req.body
+                },
+                { new: true })
+            res.status(200).json(updatedUser)
+        } catch (err) {
+            console.error("Error occurred during updateing user:", err);
+            res.status(500).send("Getting error during updating user details. Please try again !!");
+        }
+    }
+    else {
+        console.error("Error occurred during updateing user:", err);
+        res.status(500).send("Not getting all the room details for upadte user. Please try again !!");
+    }
+})
+
+
+
 module.exports = router
