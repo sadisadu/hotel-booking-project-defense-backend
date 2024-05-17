@@ -51,15 +51,41 @@ router.delete("/delete/:id", async (req, res) => {
             await Room.findByIdAndDelete(req.params.id)
             res.status(200).json("Room has been delete successfully !!")
         } catch (err) {
-            console.error("Error occurred during add room:", err);
+            console.error("Error occurred during delete room:", err);
             res.status(500).send("An error occurred during deleting room. Please try again !!");
         }
     }
     else {
-        console.error("Error occurred during add room:", err);
+        console.error("Error occurred during delete room:", err);
         res.status(500).send("Not getting the room Id. Please try again !!");
     }
 })
+
+
+//edit the room details 
+router.put("/update", async (req, res) => {
+    if (req.body.roomId) {
+        try {
+
+            const updatedRoom = await Room.findByIdAndUpdate(req.body.roomId,
+                {
+                    $set: req.body
+                },
+                { new: true })
+            res.status(200).json(updatedRoom)
+        } catch (err) {
+            console.error("Error occurred during updateing room:", err);
+            res.status(500).send("Getting error during updating room details. Please try again !!");
+        }
+    }
+    else {
+        console.error("Error occurred during updateing room:", err);
+        res.status(500).send("Not getting all the room details for upadte room. Please try again !!");
+    }
+})
+
+
+
 
 module.exports = router;
 
