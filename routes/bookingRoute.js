@@ -4,14 +4,14 @@ const router = express.Router();
 const Booking = require("../models/booking.js");
 const Room = require("../models/rooms.js");
 const moment = require("moment");
-const {v4: uuidv4} = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(
   "sk_test_51PFdpZRoGuoCEYvazqOeiKkDNaR6fkntQmcyKLVi6JaEDEJTT2iMyRgA9YCrXvAQvznRfEfo4yumukX0ZGz6sBJK00zluBospO"
 );
 
 // bookroom
 router.post("/bookroom", async (req, res) => {
-  const {room, userid, Fromdate, Todate, totalamount, totaldays, token} =
+  const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
     req.body;
 
   try {
@@ -47,7 +47,7 @@ router.post("/bookroom", async (req, res) => {
 
       const booking = await newbooking.save();
       console.log("booking done!");
-      const roomtemp = await Room.findOne({_id: room._id});
+      const roomtemp = await Room.findOne({ _id: room._id });
       console.log("roomtemp", roomtemp);
 
       roomtemp.currentbookings.push({
@@ -72,7 +72,7 @@ router.post("/bookroom", async (req, res) => {
 router.post("/getbookings", async (req, res) => {
   const userid = req.body.userid;
   try {
-    const bookings = await Booking.find({userid: userid});
+    const bookings = await Booking.find({ userid: userid });
     res.send(bookings);
   } catch (error) {
     console.error("Error occurred during booking:", error);
@@ -84,13 +84,13 @@ router.post("/getbookings", async (req, res) => {
 
 // cancel bookings
 router.post("/cancelBooking", async (req, res) => {
-  const {bookingid, roomid} = req.body;
+  const { bookingid, roomid } = req.body;
   try {
-    const bookingItem = await Booking.findOne({_id: bookingid});
+    const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.status = "cancelled";
     await bookingItem.save();
 
-    const room = await Room.findOne({_id: roomid});
+    const room = await Room.findOne({ _id: roomid });
     const bookings = room.currentbookings;
     const tempBookings = bookings.filter(
       (item) => item.bookingid.toString() !== bookingid
@@ -100,10 +100,10 @@ router.post("/cancelBooking", async (req, res) => {
 
     res.send("Booking cancelled successfully !!!");
   } catch (error) {
-    console.error("Error occurred during booking:", error);
+    console.error("Error occurred during canceling booking:", error);
     res
       .status(500)
-      .send("An error occurred during booking. Please try again later.");
+      .send("An error occurred during cancel booking. Please try again later.");
   }
 });
 
