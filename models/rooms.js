@@ -6,44 +6,44 @@ const roomSchema = mongoose.Schema({
         type: String,
         require: true
     },
-    maxcount : {
+    totalrooms: {
         type: Number,
         require: true
     },
-    phonenumber : {
+    phonenumber: {
         type: Number,
         require: true
     },
-    rentperday : {
+    rentperday: {
         type: Number,
         require: true
     },
-    imageurls : [],
-    currentbookings : [],
-    type : {
-        type:String,
-        require : true
+    imageurls: [],
+    currentbookings: [],
+    type: {
+        type: String,
+        require: true
     },
-    description : {
+    description: {
         type: String,
         require: true
     },
     reviews: [
         {
-          customerName: String,
-          description: String,
-          date: {
-            type: Date,
-            default: Date.now,
-          },
+            customerName: String,
+            description: String,
+            date: {
+                type: Date,
+                default: Date.now,
+            },
         },
-      ],
+    ],
 
-} , {
-    timestamps : true,
+}, {
+    timestamps: true,
 })
 
-const roomModel = mongoose.model('rooms',roomSchema)
+const roomModel = mongoose.model('rooms', roomSchema)
 
 
 module.exports = roomModel
