@@ -27,7 +27,17 @@ const bookingSchema = mongoose.Schema({
     },
     status: {
         type: String, required: true, default: 'booked'
-    }
+    },
+    reqRefund :{
+        type: Boolean, required: true, default: false
+    },
+    isRefunded :{
+        type: Boolean, required: true, default: false
+    },
+    refundAmount :{
+        type: Number, required: true, default: 0
+    },
+    
 }, {
     timestamps: true,
 })
