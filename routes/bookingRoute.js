@@ -91,6 +91,9 @@ router.post("/bookroom", async (req, res) => {
           todate: moment(Todate).format("DD-MM-YYYY"),
           userid: userid,
           status: booking.status,
+          reqRefund : false,
+          isRefunded : false,
+          refundAmount : 0,
         });
         await roomtemp.save();
       }
@@ -141,7 +144,7 @@ router.post("/getbookings", async (req, res) => {
   }
 });
 
-// cancel bookings
+// cancel bookings (by user)
 router.post("/cancelBooking", async (req, res) => {
   const { bookingid, roomid } = req.body;
   try {
@@ -168,6 +171,33 @@ router.post("/cancelBooking", async (req, res) => {
   }
 });
 
+
+// refund bookings (by user)
+router.post("/refundBooking", async (req, res) => {
+  const { bookingid, roomid } = req.body;
+  try {
+    const bookingItem = await Booking.findOne({ _id: bookingid });
+    bookingItem.reqRefund = true;
+    await bookingItem.save();
+
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+
+    const room = await Room.findOne({ _id: roomid });
+    const bookings = room.currentbookings;
+    const tempBookings = bookings.filter(
+      (item) => item.bookingid.toString() !== bookingid
+    );
+    room.currentbookings = tempBookings;
+    await room.save();
+
+    res.send("Request for Refund successful !!!");
+  } catch (error) {
+    console.error("Error occurred during refund booking:", error);
+    res
+      .status(500)
+      .send("An error occurred during refund booking. Please try again later.");
+  }
+});
 
 
 
@@ -210,6 +240,47 @@ router.post("/admin/cancelBooking", async (req, res) => {
     res
       .status(500)
       .send("An error occurred during cancel booking. Please try again later.");
+  }
+});
+
+
+//  refund  by admin 
+router.post("/admin/makeRefund", async (req, res) => {
+  const { bookingid, roomid } = req.body;
+  try {
+    const bookingItem = await Booking.findOne({ _id: bookingid });
+    bookingItem.isRefunded = true;
+    await bookingItem.save();
+
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+
+    const room = await Room.findOne({ _id: roomid });
+    const bookings = room.currentbookings;
+    const tempBookings = bookings.filter(
+      (item) => item.bookingid.toString() !== bookingid
+    );
+    room.currentbookings = tempBookings;
+    await room.save();
+
+    const userInfo = await User.findById(bookingItem.userid)
+    if (!userInfo) {
+      return res.status(404).send("User not found !!!");
+    }
+
+    //create a notification
+    const notification = new Notification({
+      userid: userInfo._id,
+      message: `Your refund on ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been made by the admin.`
+    });
+    await notification.save();
+
+    console.log("Notification created !!!")
+    res.send("Your Refund request is granted !!!");
+  } catch (error) {
+    console.error("Error occurred during refund:", error);
+    res
+      .status(500)
+      .send("An error occurred during refund. Please try again later.");
   }
 });
 
