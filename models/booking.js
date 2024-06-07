@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const bookingSchema = mongoose.Schema({
     room: {
         type: String, required: true
@@ -22,32 +21,25 @@ const bookingSchema = mongoose.Schema({
     totaldays: {
         type: Number, required: true
     },
-    childNumber: {
-        type: Number, required: true
-    },
-    adultNumber: {
-        type: Number, required: true
-    },
     transaction: {
         type: String, required: true
     },
     status: {
         type: String, required: true, default: 'booked'
     },
-    reqRefund :{
+    reqRefund: {
         type: Boolean, required: true, default: false
     },
-    isRefunded :{
+    isRefunded: {
         type: Boolean, required: true, default: false
     },
-    refundAmount :{
+    refundAmount: {
         type: Number, required: true, default: 0
     },
-    
+
 }, {
     timestamps: true,
 })
 
 const bookingmodel = mongoose.model('booking', bookingSchema);
-
-module.exports = bookingmodel;
+module.exports = bookingmodel

@@ -1,8 +1,6 @@
-// const express = require("express");
 const SSLCommerzPayment = require('sslcommerz-lts')
 const express = require("express");
 const router = express.Router();
-
 const cron = require('node-cron');
 const Booking = require("../models/booking.js");
 const Room = require("../models/rooms.js");
@@ -13,9 +11,6 @@ const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(
   "sk_test_51PFdpZRoGuoCEYvazqOeiKkDNaR6fkntQmcyKLVi6JaEDEJTT2iMyRgA9YCrXvAQvznRfEfo4yumukX0ZGz6sBJK00zluBospO"
 );
-
-
-
 // check availability
 async function checkAvailability(roomid, fromdate, todate) {
   // console.log("roomid", roomid)
@@ -27,22 +22,15 @@ async function checkAvailability(roomid, fromdate, todate) {
       { fromdate: { $lte: todate }, todate: { $gte: fromdate } }
     ]
   });
-
   const room = await Room.findById(roomid);
-
   const bookedRooms = bookings.length;
   const availableRooms = room.totalrooms - bookedRooms;
-
   return availableRooms;
 }
-
-
-
 // bookroom
 router.post("/bookroom", async (req, res) => {
-  const { room, userid, Fromdate, Todate, totalamount, totaldays, token, childNumber, adultNumber } =
+  const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
     req.body;
-
   const availableRooms = await checkAvailability(room?._id, Fromdate, Todate);
   console.log("available", availableRooms)
   if (availableRooms > 0) {
@@ -52,7 +40,6 @@ router.post("/bookroom", async (req, res) => {
         email: token.email,
         source: token.id,
       });
-
       const payment = await stripe.charges.create(
         {
           amount: totalamount * 100,
@@ -64,7 +51,6 @@ router.post("/bookroom", async (req, res) => {
           idempotencyKey: uuidv4(),
         }
       );
-
       if (payment) {
         const newbooking = new Booking({
           room: room.name,
@@ -74,17 +60,13 @@ router.post("/bookroom", async (req, res) => {
           todate: moment(Todate).format("DD-MM-YYYY"),
           totalamount,
           totaldays,
-          childNumber,
-          adultNumber,
           transaction: "1234",
         });
-
         const booking = await newbooking.save();
         console.log("booking done!");
         const roomtemp = await Room.findOne({ _id: room._id });
         await Room.findByIdAndUpdate(roomtemp._id, { $inc: { totalrooms: -1 } });
         console.log("roomtemp", roomtemp);
-
         roomtemp.currentbookings.push({
           bookingid: booking._id,
           fromdate: moment(Fromdate).format("DD-MM-YYYY"),
@@ -109,27 +91,20 @@ router.post("/bookroom", async (req, res) => {
     res.status(400).json({ message: 'No rooms available for the selected dates' });
   }
 });
-
 // automatically free up rooms after booking peroid over
-cron.schedule('0 * 0 * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   const now = new Date();
-
   const expiredBookings = await Booking.find({
     todate: { $lt: now },
     status: 'booked'
   });
-
   for (const booking of expiredBookings) {
     await Room.findByIdAndUpdate(booking.roomid, { $inc: { totalrooms: 1 } });
     booking.status = 'expired';
     await booking.save();
   }
-
   console.log('Expired bookings processed');
 });
-
-
-
 // get bookings
 router.post("/getbookings", async (req, res) => {
   const userid = req.body.userid;
@@ -151,9 +126,7 @@ router.post("/cancelBooking", async (req, res) => {
     const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.status = "cancelled";
     await bookingItem.save();
-
     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
-
     const room = await Room.findOne({ _id: roomid });
     const bookings = room.currentbookings;
     const tempBookings = bookings.filter(
@@ -161,7 +134,6 @@ router.post("/cancelBooking", async (req, res) => {
     );
     room.currentbookings = tempBookings;
     await room.save();
-
     res.send("Booking cancelled successfully !!!");
   } catch (error) {
     console.error("Error occurred during canceling booking:", error);
@@ -202,7 +174,6 @@ router.post("/refundBooking", async (req, res) => {
 
 
 
-
 //  bookings canceled by admin 
 router.post("/admin/cancelBooking", async (req, res) => {
   const { bookingid, roomid } = req.body;
@@ -210,9 +181,7 @@ router.post("/admin/cancelBooking", async (req, res) => {
     const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.status = "cancelled";
     await bookingItem.save();
-
     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
-
     const room = await Room.findOne({ _id: roomid });
     const bookings = room.currentbookings;
     const tempBookings = bookings.filter(
@@ -220,19 +189,16 @@ router.post("/admin/cancelBooking", async (req, res) => {
     );
     room.currentbookings = tempBookings;
     await room.save();
-
     const userInfo = await User.findById(bookingItem.userid)
     if (!userInfo) {
       return res.status(404).send("User not found !!!");
     }
-
     //create a notification
     const notification = new Notification({
       userid: userInfo._id,
       message: `Your booking on ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been cancelled by the admin.`
     });
     await notification.save();
-
     console.log("Notification created !!!")
     res.send("Booking cancelled successfully !!!");
   } catch (error) {
@@ -288,7 +254,6 @@ router.post("/admin/makeRefund", async (req, res) => {
 //get all notifications
 router.get('/notifications/:userid', async (req, res) => {
   const { userid } = req.params;
-
   try {
     const notifications = await Notification.find({ userid }).sort({ createdAt: -1 });
     console.log(notifications)
@@ -297,11 +262,6 @@ router.get('/notifications/:userid', async (req, res) => {
     res.status(500).send("Server error on all notification !!!");
   }
 });
-
-
-
-
-
 // get all bookings
 router.get("/getAllBookings", async (req, res) => {
   try {
@@ -314,28 +274,4 @@ router.get("/getAllBookings", async (req, res) => {
       .send("An error occurred during booking. Please try again later.");
   }
 });
-
-
-
-
-
-router.get('/getBookingsBySpecificDate', async (req, res) => {
-  const { date } = req.query;
-  const targetDate = new Date(date);
-
-  try {
-    const bookings = await Booking.find({
-      fromdate: { $lte: targetDate },
-      todate: { $gte: targetDate },
-    });
-
-    res.status(200).json(bookings);
-  } catch (error) {
-    res.status(500).json({ message: `Error fetching bookings: ${error}` });
-  }
-});
-
-
-
-
 module.exports = router;
