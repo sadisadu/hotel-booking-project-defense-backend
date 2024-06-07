@@ -24,20 +24,15 @@ const roomSchema = mongoose.Schema({
         type: String,
         require: true
     },
-    description: {
+    location: {
         type: String,
         require: true
     },
-    reviews: [
-        {
-            customerName: String,
-            description: String,
-            date: {
-                type: Date,
-                default: Date.now,
-            },
-        },
-    ],
+    description: {
+        type: String,
+        require: true
+    }
+
 
 }, {
     timestamps: true,

@@ -40,7 +40,7 @@ async function checkAvailability(roomid, fromdate, todate) {
 
 // bookroom
 router.post("/bookroom", async (req, res) => {
-  const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
+  const { room, userid, Fromdate, Todate, totalamount, totaldays, token, childNumber, adultNumber } =
     req.body;
 
   const availableRooms = await checkAvailability(room?._id, Fromdate, Todate);
@@ -74,6 +74,8 @@ router.post("/bookroom", async (req, res) => {
           todate: moment(Todate).format("DD-MM-YYYY"),
           totalamount,
           totaldays,
+          childNumber,
+          adultNumber,
           transaction: "1234",
         });
 
@@ -106,7 +108,7 @@ router.post("/bookroom", async (req, res) => {
 });
 
 // automatically free up rooms after booking peroid over
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('0 * 0 * * *', async () => {
   const now = new Date();
 
   const expiredBookings = await Booking.find({
@@ -227,6 +229,8 @@ router.get('/notifications/:userid', async (req, res) => {
 
 
 
+
+
 // get all bookings
 router.get("/getAllBookings", async (req, res) => {
   try {
@@ -241,6 +245,24 @@ router.get("/getAllBookings", async (req, res) => {
 });
 
 
+
+
+
+router.get('/getBookingsBySpecificDate', async (req, res) => {
+  const { date } = req.query;
+  const targetDate = new Date(date);
+
+  try {
+    const bookings = await Booking.find({
+      fromdate: { $lte: targetDate },
+      todate: { $gte: targetDate },
+    });
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: `Error fetching bookings: ${error}` });
+  }
+});
 
 
 
