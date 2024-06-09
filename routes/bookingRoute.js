@@ -73,9 +73,9 @@ router.post("/bookroom", async (req, res) => {
           todate: moment(Todate).format("DD-MM-YYYY"),
           userid: userid,
           status: booking.status,
-          reqRefund : false,
-          isRefunded : false,
-          refundAmount : 0,
+          reqRefund: false,
+          isRefunded: false,
+          refundAmount: 0,
         });
         await roomtemp.save();
       }
@@ -91,6 +91,8 @@ router.post("/bookroom", async (req, res) => {
     res.status(400).json({ message: 'No rooms available for the selected dates' });
   }
 });
+
+
 // automatically free up rooms after booking peroid over
 cron.schedule('0 0 * * *', async () => {
   const now = new Date();
@@ -105,6 +107,8 @@ cron.schedule('0 0 * * *', async () => {
   }
   console.log('Expired bookings processed');
 });
+
+
 // get bookings
 router.post("/getbookings", async (req, res) => {
   const userid = req.body.userid;
@@ -140,6 +144,30 @@ router.post("/cancelBooking", async (req, res) => {
     res
       .status(500)
       .send("An error occurred during cancel booking. Please try again later.");
+  }
+});
+
+// checkout (by user)
+router.post("/checkout", async (req, res) => {
+  const { bookingid, roomid } = req.body;
+  try {
+    const bookingItem = await Booking.findOne({ _id: bookingid });
+    bookingItem.status = "checkout";
+    await bookingItem.save();
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+    const room = await Room.findOne({ _id: roomid });
+    const bookings = room.currentbookings;
+    const tempBookings = bookings.filter(
+      (item) => item.bookingid.toString() !== bookingid
+    );
+    room.currentbookings = tempBookings;
+    await room.save();
+    res.send("Checkout successfully !!!");
+  } catch (error) {
+    console.error("Error occurred during checkout by user:", error);
+    res
+      .status(500)
+      .send("Error occurred during checkout by user. Please try again later.");
   }
 });
 
@@ -209,6 +237,30 @@ router.post("/admin/cancelBooking", async (req, res) => {
   }
 });
 
+// checkout by admin 
+router.post("/admin/checkout", async (req, res) => {
+  const { bookingid, roomid } = req.body;
+  try {
+    const bookingItem = await Booking.findOne({ _id: bookingid });
+    bookingItem.status = "checkout";
+    await bookingItem.save();
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+    const room = await Room.findOne({ _id: roomid });
+    const bookings = room.currentbookings;
+    const tempBookings = bookings.filter(
+      (item) => item.bookingid.toString() !== bookingid
+    );
+    room.currentbookings = tempBookings;
+    await room.save();
+    res.send("Checkout successfully !!!");
+  } catch (error) {
+    console.error("Error occurred during checkout by admin:", error);
+    res
+      .status(500)
+      .send("Error occurred during checkout by admin. Please try again later.");
+  }
+});
+
 
 //  refund  by admin 
 router.post("/admin/makeRefund", async (req, res) => {
@@ -262,6 +314,7 @@ router.get('/notifications/:userid', async (req, res) => {
     res.status(500).send("Server error on all notification !!!");
   }
 });
+
 // get all bookings
 router.get("/getAllBookings", async (req, res) => {
   try {
