@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+
+
+// const reviewSchema = new mongoose.Schema();
+
+
 const roomSchema = mongoose.Schema({
 
     name: {
@@ -31,7 +36,13 @@ const roomSchema = mongoose.Schema({
     description: {
         type: String,
         require: true
-    }
+    },
+    reviews: [{
+        customerName: { type: String, required: true },
+        rating: { type: Number },
+        comment: { type: String, required: true },
+        date: { type: Date, default: Date.now }
+      }]
 
 
 }, {
