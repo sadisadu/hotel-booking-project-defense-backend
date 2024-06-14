@@ -32,7 +32,7 @@ router.post("/bookroom", async (req, res) => {
   const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
     req.body;
   const availableRooms = await checkAvailability(room?._id, Fromdate, Todate);
-  console.log("available", availableRooms)
+  //console.log("available", availableRooms)
   if (availableRooms > 0) {
     try {
       // console.log("I am token", token)
@@ -66,7 +66,7 @@ router.post("/bookroom", async (req, res) => {
         console.log("booking done!");
         const roomtemp = await Room.findOne({ _id: room._id });
         await Room.findByIdAndUpdate(roomtemp._id, { $inc: { totalrooms: -1 } });
-        console.log("roomtemp", roomtemp);
+        //console.log("roomtemp", roomtemp);
         roomtemp.currentbookings.push({
           bookingid: booking._id,
           fromdate: moment(Fromdate).format("DD-MM-YYYY"),
@@ -174,10 +174,13 @@ router.post("/checkout", async (req, res) => {
 
 // refund bookings (by user)
 router.post("/refundBooking", async (req, res) => {
-  const { bookingid, roomid } = req.body;
+  const { bookingid, roomid, refundAmount } = req.body;
+  console.log("Checkeee ---:, refund amount", refundAmount);
   try {
+    console.log("Checke ---:, refund amount", refundAmount);
     const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.reqRefund = true;
+    bookingItem.refundAmount = refundAmount;
     await bookingItem.save();
 
     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
@@ -308,7 +311,7 @@ router.get('/notifications/:userid', async (req, res) => {
   const { userid } = req.params;
   try {
     const notifications = await Notification.find({ userid }).sort({ createdAt: -1 });
-    console.log(notifications)
+   // console.log(notifications)
     res.send(notifications);
   } catch (error) {
     res.status(500).send("Server error on all notification !!!");
