@@ -84,15 +84,22 @@ router.put("/update", async (req, res) => {
     }
 })
 
-//room reviews ---:
+
+// room review part
 router.post("/addreview", async (req, res) => {
     const { roomid, review } = req.body;
-    console.log("review data in server ---:", req.body);
+  
+    // Basic validation
+    // if (!roomid || !review || !review.user || !review.rating || !review.comment) {
+    //   return res.status(400).send("Room ID and complete review information are required.");
+    // }
+  
+    console.log("Review data in server:", req.body);
   
     try {
       const room = await Room.findById(roomid);
       if (!room) {
-        return res.status(404).send("Room not found");
+        return res.status(404).send("Room not found.");
       }
   
       room.reviews.push(review);
@@ -104,6 +111,7 @@ router.post("/addreview", async (req, res) => {
       res.status(500).send("An error occurred while adding the review. Please try again later.");
     }
   });
+  
 
 
 module.exports = router;

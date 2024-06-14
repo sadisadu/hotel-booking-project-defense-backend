@@ -11,6 +11,8 @@ const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(
   "sk_test_51PFdpZRoGuoCEYvazqOeiKkDNaR6fkntQmcyKLVi6JaEDEJTT2iMyRgA9YCrXvAQvznRfEfo4yumukX0ZGz6sBJK00zluBospO"
 );
+
+
 // check availability
 async function checkAvailability(roomid, fromdate, todate) {
   // console.log("roomid", roomid)
@@ -330,4 +332,32 @@ router.get("/getAllBookings", async (req, res) => {
       .send("An error occurred during booking. Please try again later.");
   }
 });
+
+
+// report
+router.get("/getAllBookings", async (req, res) => {
+  try {
+    const bookings = await Booking.find({});
+    res.send(bookings);
+  } catch (error) {
+    console.error("Error occurred during fetching all bookings:", error);
+    res.status(500).send("An error occurred during fetching all bookings. Please try again later.");
+  }
+});
+
+// Route to get bookings by date range
+router.get("/getBookingsByDateRange", async (req, res) => {
+  const { startDate, endDate } = req.query;
+  try {
+    const bookings = await Booking.find({
+      fromdate: { $gte: moment(startDate, "YYYY-MM-DD").format("DD-MM-YYYY") },
+      todate: { $lte: moment(endDate, "YYYY-MM-DD").format("DD-MM-YYYY") },
+    });
+    res.send(bookings);
+  } catch (error) {
+    console.error("Error occurred during fetching bookings by date range:", error);
+    res.status(500).send("An error occurred during fetching bookings by date range. Please try again later.");
+  }
+});
+
 module.exports = router;
