@@ -3,6 +3,8 @@ const connectDB = require("./db.js")
 const app = express();
 const cors = require('cors')
 
+
+
 app.use(cors({
   origin: "*",
   credentials: true
@@ -18,6 +20,11 @@ app.use('/api/users', usersRoute)
 app.use('/api/bookings', bookingRoute)
 
 
+
+// const PORT = process.env.PORT || 7700;
+// app.listen(7700, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });
 
 //* connecting database
 connectDB()
