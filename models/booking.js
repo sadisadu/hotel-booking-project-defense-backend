@@ -34,7 +34,7 @@ const bookingSchema = mongoose.Schema({
         type: Boolean, required: true, default: false
     },
     refundAmount: {
-        type: Number, required: true, default: 0
+        type: Number, default: 0
     },
 
 }, {

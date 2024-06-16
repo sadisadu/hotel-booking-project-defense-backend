@@ -13,6 +13,12 @@ const stripe = require("stripe")(
 );
 
 
+function parseDate(dateString) {
+  const [day, month, year] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month - 1 because months are 0-indexed in JavaScript
+}
+
+
 // check availability
 async function checkAvailability(roomid, fromdate, todate) {
   // console.log("roomid", roomid)
@@ -34,7 +40,7 @@ router.post("/bookroom", async (req, res) => {
   const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
     req.body;
   const availableRooms = await checkAvailability(room?._id, Fromdate, Todate);
-  console.log("available", availableRooms)
+  // console.log("available", availableRooms)
   if (availableRooms > 0) {
     try {
       // console.log("I am token", token)
@@ -265,44 +271,128 @@ router.post("/admin/checkout", async (req, res) => {
 
 
 //  refund  by admin 
+// router.post("/admin/makeRefund", async (req, res) => {
+//   const { bookingid, roomid } = req.body;
+//   try {
+//     const bookingItem = await Booking.findOne({ _id: bookingid });
+//     bookingItem.isRefunded = true;
+//     await bookingItem.save();
+
+//     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+
+//     const room = await Room.findOne({ _id: roomid });
+//     const bookings = room.currentbookings;
+//     const tempBookings = bookings.filter(
+//       (item) => item.bookingid.toString() !== bookingid
+//     );
+//     room.currentbookings = tempBookings;
+//     await room.save();
+
+//     const userInfo = await User.findById(bookingItem.userid)
+//     if (!userInfo) {
+//       return res.status(404).send("User not found !!!");
+//     }
+
+//     //create a notification
+//     const notification = new Notification({
+//       userid: userInfo._id,
+//       message: `Your refund on ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been made by the admin.`
+//     });
+//     await notification.save();
+
+//     console.log("Notification created !!!")
+//     res.send("Your Refund request is granted !!!");
+//   } catch (error) {
+//     console.error("Error occurred during refund:", error);
+//     res
+//       .status(500)
+//       .send("An error occurred during refund. Please try again later.");
+//   }
+// });
+
+
+
+
 router.post("/admin/makeRefund", async (req, res) => {
   const { bookingid, roomid } = req.body;
+  console.log("i am req body",req.body)
+  
   try {
+    // Find the booking item
     const bookingItem = await Booking.findOne({ _id: bookingid });
-    bookingItem.isRefunded = true;
-    await bookingItem.save();
-
-    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
-
-    const room = await Room.findOne({ _id: roomid });
-    const bookings = room.currentbookings;
-    const tempBookings = bookings.filter(
-      (item) => item.bookingid.toString() !== bookingid
-    );
-    room.currentbookings = tempBookings;
-    await room.save();
-
-    const userInfo = await User.findById(bookingItem.userid)
-    if (!userInfo) {
-      return res.status(404).send("User not found !!!");
+    if (!bookingItem) {
+      return res.status(404).send("Booking not found.");
     }
 
-    //create a notification
+    console.log(`Booking found: ${bookingItem}`);
+
+    const currentDate = new Date();
+    const bookingStartDate = parseDate(bookingItem.fromdate);
+
+    console.log(`Current Date: ${currentDate}`);
+    console.log(`Booking Start Date: ${bookingStartDate}`);
+
+    // Determine the refund percentage
+    let refundPercentage = 0;
+    if (currentDate < bookingStartDate) {
+      refundPercentage = 100; // Full refund if cancellation is before the booking start date
+    } else if (currentDate.toDateString() === bookingStartDate.toDateString()) {
+      refundPercentage = 50; // Partial refund if cancellation is on or after the booking start date
+    }
+    else if (currentDate > bookingStartDate){
+      refundPercentage = 0;
+    }
+    
+
+    console.log(`Refund Percentage: ${refundPercentage}`);
+    console.log(`total ammount: ${typeof bookingItem.totalamount}`);
+
+    // Calculate the refund amount
+    const refundAmount = (bookingItem.totalamount * refundPercentage) / 100;
+    
+    console.log(`Refund Amount: ${refundAmount}`);
+
+    // Update the booking item with refund details
+    bookingItem.isRefunded = true;
+    bookingItem.refundAmount = refundAmount;
+    await bookingItem.save();
+    console.log("Booking item updated with refund amount:", refundAmount);
+
+    // Update the room's total rooms count
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+
+    // Update the room's current bookings
+    const room = await Room.findOne({ _id: roomid });
+    if (room) {
+      const updatedBookings = room.currentbookings.filter(
+        (item) => item.bookingid.toString() !== bookingid
+      );
+      room.currentbookings = updatedBookings;
+      await room.save();
+    }
+
+    // Find the user associated with the booking
+    const userInfo = await User.findById(bookingItem.userid);
+    if (!userInfo) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Create a notification for the user
     const notification = new Notification({
       userid: userInfo._id,
-      message: `Your refund on ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been made by the admin.`
+      message: `Your refund of ${refundPercentage}% (${refundAmount} currency units) for booking ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been processed by the admin.`
     });
     await notification.save();
 
-    console.log("Notification created !!!")
-    res.send("Your Refund request is granted !!!");
+    console.log("Notification created!");
+    res.send(`Your refund request is granted with a ${refundPercentage}% refund amounting to ${refundAmount} currency units!`);
   } catch (error) {
     console.error("Error occurred during refund:", error);
-    res
-      .status(500)
-      .send("An error occurred during refund. Please try again later.");
+    res.status(500).send("An error occurred during the refund process. Please try again later.");
   }
 });
+
+
 
 
 //get all notifications
