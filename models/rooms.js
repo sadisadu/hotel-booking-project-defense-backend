@@ -40,7 +40,7 @@ const roomSchema = mongoose.Schema({
     reviews: [{
         customerName: { type: String, required: true },
         rating: { type: Number },
-        comment: { type: String, required: true },
+        comment: { type: String },
         date: { type: Date, default: Date.now }
       }]
 

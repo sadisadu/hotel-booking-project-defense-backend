@@ -89,10 +89,6 @@ router.put("/update", async (req, res) => {
 router.post("/addreview", async (req, res) => {
     const { roomid, review } = req.body;
   
-    // Basic validation
-    // if (!roomid || !review || !review.user || !review.rating || !review.comment) {
-    //   return res.status(400).send("Room ID and complete review information are required.");
-    // }
   
     console.log("Review data in server:", req.body);
   
