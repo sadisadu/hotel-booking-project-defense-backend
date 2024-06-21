@@ -9,6 +9,9 @@ const bookingSchema = mongoose.Schema({
     userid: {
         type: String, required: true
     },
+    username: {
+        type: String, required: true
+    },
     fromdate: {
         type: String, required: true
     },
@@ -36,6 +39,9 @@ const bookingSchema = mongoose.Schema({
     refundAmount: {
         type: Number, default: 0
     },
+    cancelDate:{
+        type: String, required: true
+    }
 
 }, {
     timestamps: true,

@@ -37,7 +37,7 @@ async function checkAvailability(roomid, fromdate, todate) {
 }
 // bookroom
 router.post("/bookroom", async (req, res) => {
-  const { room, userid, Fromdate, Todate, totalamount, totaldays, token } =
+  const { room, userid, Fromdate, Todate, totalamount, username, totaldays, token } =
     req.body;
   const availableRooms = await checkAvailability(room?._id, Fromdate, Todate);
   // console.log("available", availableRooms)
@@ -63,6 +63,7 @@ router.post("/bookroom", async (req, res) => {
         const newbooking = new Booking({
           room: room.name,
           roomid: room._id,
+          username,
           userid,
           fromdate: moment(Fromdate).format("DD-MM-YYYY"),
           todate: moment(Todate).format("DD-MM-YYYY"),
@@ -80,6 +81,7 @@ router.post("/bookroom", async (req, res) => {
           fromdate: moment(Fromdate).format("DD-MM-YYYY"),
           todate: moment(Todate).format("DD-MM-YYYY"),
           userid: userid,
+          username: username,
           status: booking.status,
           reqRefund: false,
           isRefunded: false,
@@ -183,12 +185,13 @@ router.post("/checkout", async (req, res) => {
 // refund bookings (by user)
 router.post("/refundBooking", async (req, res) => {
   const { bookingid, roomid, refundAmount } = req.body;
-  console.log("Checkeee ---:, refund amount", refundAmount);
+  // console.log("Checkeee ---:, refund amount", refundAmount);
   try {
-    console.log("Checke ---:, refund amount", refundAmount);
+    // console.log("Checke ---:, refund amount", refundAmount);
     const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.reqRefund = true;
     bookingItem.refundAmount = refundAmount;
+    bookingItem.cancelDate = new Date();
     await bookingItem.save();
 
     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
@@ -219,6 +222,7 @@ router.post("/admin/cancelBooking", async (req, res) => {
   try {
     const bookingItem = await Booking.findOne({ _id: bookingid });
     bookingItem.status = "cancelled";
+    bookingItem.cancelDate = new Date();
     await bookingItem.save();
     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
     const room = await Room.findOne({ _id: roomid });
@@ -273,53 +277,13 @@ router.post("/admin/checkout", async (req, res) => {
 });
 
 
-//  refund  by admin 
-// router.post("/admin/makeRefund", async (req, res) => {
-//   const { bookingid, roomid } = req.body;
-//   try {
-//     const bookingItem = await Booking.findOne({ _id: bookingid });
-//     bookingItem.isRefunded = true;
-//     await bookingItem.save();
-
-//     await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
-
-//     const room = await Room.findOne({ _id: roomid });
-//     const bookings = room.currentbookings;
-//     const tempBookings = bookings.filter(
-//       (item) => item.bookingid.toString() !== bookingid
-//     );
-//     room.currentbookings = tempBookings;
-//     await room.save();
-
-//     const userInfo = await User.findById(bookingItem.userid)
-//     if (!userInfo) {
-//       return res.status(404).send("User not found !!!");
-//     }
-
-//     //create a notification
-//     const notification = new Notification({
-//       userid: userInfo._id,
-//       message: `Your refund on ${bookingItem.room} from ${bookingItem.fromdate} to ${bookingItem.todate} has been made by the admin.`
-//     });
-//     await notification.save();
-
-//     console.log("Notification created !!!")
-//     res.send("Your Refund request is granted !!!");
-//   } catch (error) {
-//     console.error("Error occurred during refund:", error);
-//     res
-//       .status(500)
-//       .send("An error occurred during refund. Please try again later.");
-//   }
-// });
-
 
 
 
 router.post("/admin/makeRefund", async (req, res) => {
   const { bookingid, roomid } = req.body;
-  console.log("i am req body",req.body)
-  
+  console.log("i am req body", req.body)
+
   try {
     // Find the booking item
     const bookingItem = await Booking.findOne({ _id: bookingid });
@@ -342,17 +306,17 @@ router.post("/admin/makeRefund", async (req, res) => {
     } else if (currentDate.toDateString() === bookingStartDate.toDateString()) {
       refundPercentage = 50; // Partial refund if cancellation is on or after the booking start date
     }
-    else if (currentDate > bookingStartDate){
+    else if (currentDate > bookingStartDate) {
       refundPercentage = 0;
     }
-    
+
 
     console.log(`Refund Percentage: ${refundPercentage}`);
     console.log(`total ammount: ${typeof bookingItem.totalamount}`);
 
     // Calculate the refund amount
     const refundAmount = (bookingItem.totalamount * refundPercentage) / 100;
-    
+
     console.log(`Refund Amount: ${refundAmount}`);
 
     // Update the booking item with refund details
@@ -403,7 +367,7 @@ router.get('/notifications/:userid', async (req, res) => {
   const { userid } = req.params;
   try {
     const notifications = await Notification.find({ userid }).sort({ createdAt: -1 });
-   // console.log(notifications)
+    // console.log(notifications)
     res.send(notifications);
   } catch (error) {
     res.status(500).send("Server error on all notification !!!");
