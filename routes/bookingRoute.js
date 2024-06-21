@@ -215,7 +215,6 @@ router.post("/refundBooking", async (req, res) => {
 
 
 
-
 //  bookings canceled by admin 
 router.post("/admin/cancelBooking", async (req, res) => {
   const { bookingid, roomid } = req.body;
@@ -275,8 +274,6 @@ router.post("/admin/checkout", async (req, res) => {
       .send("Error occurred during checkout by admin. Please try again later.");
   }
 });
-
-
 
 
 
@@ -361,13 +358,12 @@ router.post("/admin/makeRefund", async (req, res) => {
 
 
 
-
-//get all notifications
-router.get('/notifications/:userid', async (req, res) => {
+//get notifications by userid
+router.get('/notifications', async (req, res) => {
   const { userid } = req.params;
   try {
-    const notifications = await Notification.find({ userid }).sort({ createdAt: -1 });
-    // console.log(notifications)
+    const notifications = await Notification.find({ })
+    console.log(notifications)
     res.send(notifications);
   } catch (error) {
     res.status(500).send("Server error on all notification !!!");
