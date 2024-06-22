@@ -194,14 +194,13 @@ router.post("/refundBooking", async (req, res) => {
     bookingItem.cancelDate = new Date();
     await bookingItem.save();
 
-    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
-
     const room = await Room.findOne({ _id: roomid });
     const bookings = room.currentbookings;
     const tempBookings = bookings.filter(
       (item) => item.bookingid.toString() !== bookingid
     );
     room.currentbookings = tempBookings;
+    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
     await room.save();
 
     res.send("Request for Refund successful !!!");
@@ -223,7 +222,7 @@ router.post("/admin/cancelBooking", async (req, res) => {
     bookingItem.status = "cancelled";
     bookingItem.cancelDate = new Date();
     await bookingItem.save();
-    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
+    // await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
     const room = await Room.findOne({ _id: roomid });
     const bookings = room.currentbookings;
     const tempBookings = bookings.filter(
@@ -323,7 +322,6 @@ router.post("/admin/makeRefund", async (req, res) => {
     console.log("Booking item updated with refund amount:", refundAmount);
 
     // Update the room's total rooms count
-    await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
 
     // Update the room's current bookings
     const room = await Room.findOne({ _id: roomid });
@@ -332,6 +330,7 @@ router.post("/admin/makeRefund", async (req, res) => {
         (item) => item.bookingid.toString() !== bookingid
       );
       room.currentbookings = updatedBookings;
+      await Room.findByIdAndUpdate(roomid, { $inc: { totalrooms: 1 } });
       await room.save();
     }
 
@@ -362,7 +361,7 @@ router.post("/admin/makeRefund", async (req, res) => {
 router.get('/notifications', async (req, res) => {
   const { userid } = req.params;
   try {
-    const notifications = await Notification.find({ })
+    const notifications = await Notification.find({})
     console.log(notifications)
     res.send(notifications);
   } catch (error) {
